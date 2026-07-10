@@ -40,7 +40,8 @@ def load_data(files_list):
         dataframes.append(df)
 
     merged_df = pd.concat(dataframes, ignore_index=True)
-
+    
+    # Output file: assignments_01/outputs/merged_happiness.csv
     merged_df.to_csv("outputs/merged_happiness.csv", index=False)
 
     logger.info("Datasets merged and saved")
@@ -229,37 +230,41 @@ def correlation_testing(merged_df):
     logger.info(f"Number of tests: {number_of_tests}")
     logger.info(f"Adjusted alpha: {adjusted_alpha:.5f}")
 
+    max_column = None
+    max_coefficient = None
+
     for column, value in correlation_dict.items():
-        if value["p_value"] < 0.05:
-            before = "significant"
-        else:
-            before = "not significant"
+        before = value["p_value"] < 0.05
+        after = value["p_value"] < adjusted_alpha
 
-        if value["p_value"] < adjusted_alpha:
-            after = "significant after Bonferroni"
-        else:
-            after = "not significant after Bonferroni"
+        value["before_bonferroni"] = "significant before Bonferroni" if before else "not significant before Bonferroni"
+        value["after_bonferroni"] = "significant after Bonferroni" if after else "not significant after Bonferroni"
 
-        correlation_dict[column]["before_bonferroni"] = before
-        correlation_dict[column]["after_bonferroni"] = after
-        
         logger.info(
-            f"{column}: correlation={value['coefficient']:.3f}, "
-            f"p-value={value['p_value']:.4f}, "
-            f"before={before}, after={after}"
+        f"{column}: correlation={value['coefficient']:.3f}, "
+        f"p-value={value['p_value']:.4f}, "
+        f"before={value['before_bonferroni']}, after={value['after_bonferroni']}"
         )
-    return correlation_dict
+
+        if after: 
+            if max_coefficient is None or abs(value["coefficient"]) > abs(max_coefficient):
+                max_column = column
+                max_coefficient = value["coefficient"]
+    if max_column is None:
+        return ("No significant correlations", None)
+    max_correlation = (max_column, max_coefficient)
+    return max_correlation
 
 #Task 6
 @task
-def summary_report(merged_df, hypothesis_data, correlation_data):
+def summary_report(merged_df, hypothesis_data, max_correlation):
     logger = get_run_logger()
     number_of_countries = merged_df["Country"].nunique()
     number_of_years = merged_df["Year"].nunique()
     mean_by_region = merged_df.groupby("Regional indicator")["Happiness score"].mean()
     top_regions = mean_by_region.sort_values(ascending=False).head(3)
     bottom_regions = mean_by_region.sort_values().head(3)
-    happiness_factors = [ factor for factor, result in correlation_data.items() if result["after_bonferroni"] == "significant after Bonferroni"]
+    
 
     logger.info("Total number of countries and years in the merged dataset:")
     logger.info(f"Number of countries: {number_of_countries}")
@@ -277,8 +282,13 @@ def summary_report(merged_df, hypothesis_data, correlation_data):
     logger.info(f"The P-value for 2019 vs 2020 is {hypothesis_data['2019_vs_2020']['p_value']:.4f}, so we can conclude that the average global happiness was not statistically significant.")
     logger.info(f"The P-value for East Asia vs Western Europe in 2020 is {hypothesis_data['east_asia_vs_western_europe_2020']['p_value']:.4f}, so we can conclude there is a significant difference in happiness scores between these regions in 2020.")
     
-    logger.info("Correlation testing results:")
-    logger.info(f"Factors correlated with happiness using the Bonferroni correction: {happiness_factors}")
+    if max_correlation[1] is not None:
+        logger.info(
+            f"Most strongly correlated with happiness after Bonferroni correction: "
+            f"{max_correlation[0]} with a coefficient of {max_correlation[1]:.3f}"
+        )
+    else:
+        logger.info("No correlations were significant after Bonferroni correction.")
 
 @flow
 def happiness_pipeline(files_list):
@@ -286,9 +296,9 @@ def happiness_pipeline(files_list):
     merged_df = load_data(files_list)
     statistics_data(merged_df)
     create_visualizations(merged_df)
-    hypothesis_testing(merged_df)
-    correlation_testing(merged_df)
-    summary_report(merged_df, hypothesis_testing(merged_df), correlation_testing(merged_df))
+    hypothesis_results = hypothesis_testing(merged_df)
+    max_correlation = correlation_testing(merged_df)
+    summary_report(merged_df, hypothesis_results, max_correlation)
 
 
 if __name__ == "__main__":  
