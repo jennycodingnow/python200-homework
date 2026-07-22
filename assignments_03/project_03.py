@@ -451,6 +451,7 @@ print(classification_report(y_test, predict_log_p))
 
 
 # PCA did not improve the performance of the non-tree model, so it was not included in the Logistic Regression pipeline.
+# PCA is not used in the Random Forest pipeline because tree-based models are not sensitive to feature scaling so PCA is unnecessary.
 # The pipeline results matched the earlier manual implementation, producing the same accuracy and classification report.
 # The two pipelines have different structures because Random Forest is a tree-based model that does not require feature
 # scaling, while Logistic Regression performs better when the features are scaled and standardized.
