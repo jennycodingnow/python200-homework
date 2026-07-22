@@ -133,6 +133,10 @@ print("Accuracy for KNN:", f"{accuracy_score(y_test, preds_unscaled):.4f}")
 # Q1
 values = [0.01, 1.0, 100]
 
+# Can't use "logistic regression" directly for multi-class classification, 
+# so I use "OneVsRestClassifier"to handle the multi-class case or there will be
+# an error at run-time.
+
 for c in values:
     log_reg = OneVsRestClassifier(
         LogisticRegression(
@@ -142,7 +146,8 @@ for c in values:
         )
     )
     log_reg.fit(X_train_scaled, y_train)
-    print(f"Total size with C={c}: ", np.abs(np.vstack([est.coef_ for est in log_reg.estimators_])).sum())
+    print("Total size with C(0.01, 1.0, 100):")
+    print(np.abs(np.vstack([est.coef_ for est in log_reg.estimators_])).sum())
 
 
 # --- PCA ---
@@ -192,20 +197,20 @@ plt.show()
 
 # Q3
 
-cumula_variance = np.cumsum(pca.explained_variance_ratio_ * 100)
+cumula_variance = np.cumsum(pca.explained_variance_ratio_)
 
 plt.plot(range(1, len(cumula_variance) + 1), cumula_variance, marker='o')
 plt.xlabel("Number of Components")
 plt.ylabel("Cumulative Explained Variance")
 plt.title("PCA Explained Variance")
 plt.grid(True, linestyle='--', alpha=0.5)
-plt.axhline(y=80, color='red', linestyle='--', label='80% Variance')
+plt.axhline(y=0.8, color='red', linestyle='--', label='80% Variance')
 plt.legend()
 plt.savefig("outputs/pca_variance_explained.png")
 plt.show()
 
 # Approximately 13 components are needed to explain 80% of the variance in the digits dataset, 
-# as indicated by the point where the cumulative explained variance curve crosses the 80% line.
+# as indicated by the point where the cumulative explained variance curve crosses the 0.8 line.
 
 # Q4
 
