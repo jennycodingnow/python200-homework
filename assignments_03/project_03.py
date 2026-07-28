@@ -169,7 +169,7 @@ plt.grid(True, linestyle='--', alpha=0.5)
 plt.axhline(y=90, color='red', linestyle='--', label='90% Variance')
 plt.legend()
 plt.tight_layout()
-plt.savefig("outputs/pca_variance_explained_90.png")
+plt.savefig("outputs/cumulative_explained_variance.png")
 plt.show()
 plt.close()
 
