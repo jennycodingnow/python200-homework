@@ -146,8 +146,9 @@ for c in values:
         )
     )
     log_reg.fit(X_train_scaled, y_train)
-    print("Total size with C(0.01, 1.0, 100):")
-    print(np.abs(np.vstack([est.coef_ for est in log_reg.estimators_])).sum())
+
+    coef_sum = np.abs(np.vstack([est.coef_ for est in log_reg.estimators_])).sum()
+    print(f"C={c}: total coefficient magnitude = {coef_sum:.3f}")
 
 
 # --- PCA ---
@@ -170,14 +171,16 @@ for i, label in enumerate(y_digits):
     if label not in first_indices:
         first_indices[label] = i
 
+# One-row subplot showing one example of each digit (0–9).
 for digit in range(10):
     index = first_indices[digit]
     axes[digit].imshow(images[index], cmap='gray_r')
-    axes[digit].set_title(str(digit))
+    axes[digit].set_title(f"Digit: {digit}")
     axes[digit].axis('off')
 
 plt.savefig("outputs/sample_digits.png")
 plt.show()
+plt.close()
 
 # Q2
 pca = PCA()
@@ -191,9 +194,9 @@ plt.ylabel('Component 2')
 plt.title('PCA 2D Projection of Digits Dataset')
 plt.savefig("outputs/pca_2d_projection.png")
 plt.show()
+plt.close()
 
-# Images of the same digit tend to cluster together in this 2D PCA projection,
-# although some clusters overlap more in the middle.
+# Yes, images of the same digit generally cluster together, although some overlap occurs.
 
 # Q3
 
@@ -208,6 +211,8 @@ plt.axhline(y=0.8, color='red', linestyle='--', label='80% Variance')
 plt.legend()
 plt.savefig("outputs/pca_variance_explained.png")
 plt.show()
+plt.close()
+
 
 # Approximately 13 components are needed to explain 80% of the variance in the digits dataset, 
 # as indicated by the point where the cumulative explained variance curve crosses the 0.8 line.
@@ -237,16 +242,16 @@ for row, n in enumerate(components, start=1):
         axes[row, col].imshow(reconstructed, cmap='gray')
         axes[row, col].axis("off")
 
+row_labels = ["Original", "2 PCs", "5 PCs", "15 PCs", "40 PCs"]
 
-fig.text(0.03, 0.88, "Original", rotation=90, va='center')
-fig.text(0.03, 0.70, "2 PCs", rotation=90, va='center')
-fig.text(0.03, 0.52, "5 PCs", rotation=90, va='center')
-fig.text(0.03, 0.34, "15 PCs", rotation=90, va='center')
-fig.text(0.03, 0.16, "40 PCs", rotation=90, va='center')
+for row, label in enumerate(row_labels):
+    axes[row, 0].set_ylabel(label, rotation=90, size=12)
 
 plt.tight_layout(rect=[0.08, 0, 1, 1])
 plt.savefig("outputs/pca_reconstructions.png")
 plt.show()
+plt.close()
+
 
 # Reconstructions improve as more components are added.
 # With 2 PCs, images are blurry, but around 15 PCs the digits become somewhat recognizable.

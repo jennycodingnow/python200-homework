@@ -148,7 +148,11 @@ print(f"Test set size: {X_test.shape[0]} samples")
 # Without scaling, the model will be biased towards features with much larger numeric ranges.
 # These features would dominate the main components. Therefore, the data are standardized before PCA.
 
-# PCA preprocessing
+# PCA preprocessing:
+# Scale the data first because PCA is affected by feature magnitude.
+# The scaler is fitted only on X_train to prevent data leakage.
+# PCA is also fitted only on the training data.
+
 
 scaler = StandardScaler()
 
@@ -160,20 +164,24 @@ pca = PCA()
 
 pca.fit(X_train_scaled)
 
-cumula_explained = np.cumsum(pca.explained_variance_ratio_ * 100)
+# Plot cumulative explained variance to determine the number of components
+# needed to explain 90% of the variance.
+
+
+cumula_explained = np.cumsum(pca.explained_variance_ratio_)
 plt.plot(range(1, len(cumula_explained) + 1), cumula_explained, marker='o')
 plt.xlabel("Number Components")
 plt.ylabel("Cumulative Explained Variance")
 plt.title("PCA Explained Variance")
 plt.grid(True, linestyle='--', alpha=0.5)
-plt.axhline(y=90, color='red', linestyle='--', label='90% Variance')
+plt.axhline(y=0.9, color='red', linestyle='--', label='90% Variance')
 plt.legend()
 plt.tight_layout()
 plt.savefig("outputs/cumulative_explained_variance.png")
 plt.show()
 plt.close()
 
-n = np.argmax(cumula_explained >= 90) + 1
+n = np.argmax(cumula_explained >= 0.9) + 1
 print("Number of components that reach 90% variance:", n)
 
 X_train_pca = pca.transform(X_train_scaled)[:, :n]
@@ -233,15 +241,11 @@ for depth in max_depths:
     print(f"  Training: {accuracy_train:.4f}")
     print(f"  Test: {accuracy_test:.4f}")
 
-# As the maximum depth increases, training accuracy consistently increases and test accuracy
-# also increases but more slowly. This indicates that as the tree grows deeper, it can
-# capture more patterns in the data, improving performance on both the training and test sets.
-# However, the gap between the training and test accuracy also grows larger, suggesting that
-# deeper trees are beginning to overfit the training data.
-
-# I would choose a maximum depth of 10 to use in production because this depth provides a good
-# balance between model complexity and performance. A smaller depth may underfit the data by
-# not capturing enough patterns, while larger depths increase the risk of overfitting.
+# As the tree depth increases, the training accuracy improves.
+# The test accuracy also improves at first, but deeper trees begin to overfit
+# because the gap between training and test accuracy becomes larger.
+# I would choose a max_depth of 10 because it gives a good balance between
+# accuracy and overfitting.
 
 best_depth = 10
 best_tree = DecisionTreeClassifier(max_depth=best_depth, random_state=42)
@@ -292,14 +296,16 @@ print(classification_report(y_test, predict_log_pca))
 # Decision Tree: 0.9088
 # KNN (scaled): 0.9077
 
-# The Random Forest model performs the best with accuracy 0.9457. 
-# The Logistic Regression model is the second best to perform with high accuracy above 0.929. 
-# The Logistic Regression model trained on the scaled features performed slightly better than the model trained on the PCA-reduced features. Although PCA reduced 
-# the dimensionality of the data, it also removed some information that was useful for classification. In this case, 
-# scaling alone provided the best performance. PCA vs. non-PCA, PCA worked better. Yes, it does that match the hypothesis from Task 2 because
-# after scaling, it improves the performance of the model. 
-# The Decision Tree with max_depth 10 and max_depth None have high accuracy on training data but lower accuracy on 
-# test data, indicating overfitting.
+# The Random Forest model performs the best with an accuracy of 0.9457.
+# Logistic Regression is the second-best model with an accuracy of 0.9294.
+# Logistic Regression trained on the scaled features performed slightly better than
+# Logistic Regression trained on the PCA-reduced features.
+# PCA reduced the number of features, but it slightly lowered the model's accuracy.
+# Using only scaled data gave the best performance.
+# This matches the expectation from Task 2 that scaling is important for
+# Logistic Regression, while PCA was not beneficial for this dataset.
+# The Decision Tree with max_depth=10 and max_depth=None achieved very high
+# training accuracy but lower test accuracy, indicating overfitting.
 
 # For spam filter, I would prefer minimizing false negatives because phishing and malware 
 # emails can pose serious security risks. Allowing spam into the inbox could expose users to scams, 
@@ -348,11 +354,17 @@ feature_importance_rt = pd.DataFrame({
 feature_importance_rt = feature_importance_rt.sort_values(by="Importance", ascending=False)
 print(feature_importance_rt.head(10))
 
-plt.bar(feature_importance_rt['Feature'].head(10), feature_importance_rt['Importance'].head(10), color=['green', 'orange', 'blue', 'red'])
-plt.title("Top 10 Feature Importances from Random Forest")
+# Plot top 10 Random Forest feature importances
+top10_rf = feature_importance_rt.head(10)
+
+plt.figure(figsize=(10, 5))
+plt.bar(top10_rf["Feature"], top10_rf["Importance"], color="steelblue")
+
+plt.title("Top 10 Random Forest Feature Importances")
 plt.xlabel("Features")
 plt.ylabel("Importance")
-plt.xticks(rotation=45, ha='right')
+plt.xticks(rotation=45, ha="right")
+
 plt.tight_layout()
 plt.savefig("outputs/feature_importances.png")
 plt.show()
@@ -418,12 +430,16 @@ print(f"Logistic Regression (PCA) Scores: {log_reg_pca_scores}")
 print(f"Mean: {log_reg_pca_scores.mean():.3f}")
 print(f"Std:  {log_reg_pca_scores.std():.3f}")
 
-# Random Forest is the most accurate model. It has the highest mean accuracy (0.954) and modest standard deviation (0.013).
-# The most stable model is the Logistic Regression (PCA). It has the lowest standard deviation of 0.003, indicating the 
-# lowest variance across folds. Yes, the ranking match the accuracy ranking from Task 3. The Random Forest model is the most 
-# accurate.
+# Random Forest has the highest mean accuracy (0.954), making it the most accurate model.
+# Logistic Regression (PCA) has the lowest standard deviation (0.003), making it the most stable model across folds.
+# The accuracy ranking matches the results from the single train/test split, with Random Forest performing the best overall.
+
+
 
 #Task 5
+
+# Random Forest does not require feature scaling or PCA because tree-based
+# models split on feature values rather than distances.
 
 print("------------Pipelines------------")
 #Best tree-based classifier pipeline
@@ -436,6 +452,11 @@ predict_rf_p = rf_pipeline.predict(X_test)
 
 print(f"Accuracy score for the best tree-based classifier: {accuracy_score(y_test, predict_rf_p):.4f}")
 print(classification_report(y_test, predict_rf_p))
+
+
+# Logistic Regression benefits from feature scaling.
+# PCA was compared in Task 3, but it reduced Logistic Regression accuracy.
+# Therefore, PCA is not included in this pipeline because scaled features performed better.
 
 #Best non-tree classifier pipeline
 log_pipeline = Pipeline([
@@ -450,10 +471,10 @@ print(f"Accuracy score for best non-tree classifier (Logistic Regression): {accu
 print(classification_report(y_test, predict_log_p))
 
 
-# PCA did not improve the performance of the non-tree model, so it was not included in the Logistic Regression pipeline.
-# PCA is not used in the Random Forest pipeline because tree-based models are not sensitive to feature scaling so PCA is unnecessary.
+# PCA did not improve the performance of Logistic Regression, so it was not included in the pipeline.
+# Random Forest does not require feature scaling or PCA because tree-based models split data using feature thresholds rather than distances.
 # The pipeline results matched the earlier manual implementation, producing the same accuracy and classification report.
-# The two pipelines have different structures because Random Forest is a tree-based model that does not require feature
-# scaling, while Logistic Regression performs better when the features are scaled and standardized.
+# The two pipelines have different structures because Random Forest does not require preprocessing,
+# while Logistic Regression benefits from standardized features.
 # Using pipelines combines preprocessing and model training into a single workflow, making the code more organized,
-# reproducible, and easier to maintain, share with others, and deploy.
+# reproducible, and easier to maintain and deploy.
