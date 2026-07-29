@@ -128,19 +128,16 @@ plt.close()
 
 # --- Step 4: Reflect on Evaluation ---
 
-# The model achieved a cross-validation AUC of 0.765 and a test AUC of 0.849, 
-# both of which are well above the random baseline of 0.5. This indicates that 
-# the model has good ability to distinguish between days that are good and not 
-# good for running. This performance is about what I expected because temperature, 
-# precipitation, and wind speed are strong indicators of running conditions. 
-# Looking at the classification report, the model has much lower recall (0.25) 
-# for the "good for running" class than for the "not good for running" class (0.92), 
-# meaning false negatives are more common than false positives. In practice, this means 
-# the app is more likely to miss some good running days than recommend running on a poor weather day. 
-# I think this is an acceptable trade-off because recommending a run in unsafe or uncomfortable
-# weather could negatively affect the user experience. For a real application, 
-# I would keep the default threshold of 0.5 since I prefer a more conservative recommendation 
-# that prioritizes safety over suggesting every possible running opportunity.
+# The model achieved a test AUC of 0.8486, which shows that it can distinguish 
+# between good and bad running days reasonably well. This performance is about 
+# what I expected because temperature, precipitation, and wind speed are strong 
+# indicators of outdoor running conditions. However, the classification report 
+# shows that recall for the "good for running" class is low (0.25), meaning that 
+# false negatives are more common than false positives. This means 
+# the app may incorrectly recommend skipping some days that would actually be 
+# acceptable for running. For a real application, I would consider lowering the 
+# decision threshold below 0.5, such as 0.4, to increase recall and provide more 
+# running opportunities while accepting some additional false positives.
 
 # --- Step 5: Save the Model ---
 
