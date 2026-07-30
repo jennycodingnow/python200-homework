@@ -242,10 +242,10 @@ for depth in max_depths:
     print(f"  Test: {accuracy_test:.4f}")
 
 # As the tree depth increases, the training accuracy improves.
-# The test accuracy also improves at first, but deeper trees begin to overfit
-# because the gap between training and test accuracy becomes larger.
-# I would choose a max_depth of 10 because it gives a good balance between
-# accuracy and overfitting.
+# The test accuracy improves at first, but the unlimited depth (None) tree creates
+# a larger gap between training and test accuracy, showing signs of overfitting.
+# I would choose a max_depth of 10 because it provides a good balance between
+# model performance and avoiding overfitting.
 
 best_depth = 10
 best_tree = DecisionTreeClassifier(max_depth=best_depth, random_state=42)

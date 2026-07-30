@@ -180,6 +180,7 @@ for digit in range(10):
     axes[digit].set_title(f"Digit: {digit}")
     axes[digit].axis('off')
 
+plt.tight_layout()
 plt.savefig("outputs/sample_digits.png")
 plt.show()
 plt.close()
@@ -203,6 +204,10 @@ plt.close()
 # Q3
 
 cumula_variance = np.cumsum(pca.explained_variance_ratio_)
+# Find the first number of components that reaches 80% explained variance.
+n_80 = np.argmax(cumula_variance >= 0.8) + 1
+print(f"Components needed for 80% variance: {n_80}")
+
 
 plt.plot(range(1, len(cumula_variance) + 1), cumula_variance, marker='o')
 plt.xlabel("Number of Components")
@@ -233,21 +238,26 @@ def reconstruct_digit(sample_idx, scores, pca, n_components):
 fig, axes = plt.subplots(5, 5, figsize=(10, 10))
 
 for col in range(5):
-    axes[0, col].imshow(images[col], cmap='gray')
-    axes[0, col].set_title(f"Digit: {col}")
+    axes[0, col].imshow(images[col], cmap='gray_r')
+    axes[0, col].set_title(f"Digit {col}")
     axes[0, col].axis("off")
 
 components = [2, 5, 15, 40]
 for row, n in enumerate(components, start=1):
     for col in range(5):
         reconstructed = reconstruct_digit(col, scores, pca, n)
-        axes[row, col].imshow(reconstructed, cmap='gray')
+        axes[row, col].imshow(reconstructed, cmap='gray_r')
         axes[row, col].axis("off")
 
 row_labels = ["Original", "2 PCs", "5 PCs", "15 PCs", "40 PCs"]
 
 for row, label in enumerate(row_labels):
-    axes[row, 0].set_ylabel(label, rotation=90, size=12)
+    axes[row, 0].set_ylabel(
+        label,
+        rotation=90,
+        size=12,
+        labelpad=15
+    )
 
 plt.tight_layout(rect=[0.08, 0, 1, 1])
 plt.savefig("outputs/pca_reconstructions.png")
@@ -256,6 +266,7 @@ plt.close()
 
 
 # Reconstructions improve as more components are added.
-# With 2 PCs, images are blurry, but around 15 PCs the digits become somewhat recognizable.
-# Using 40 PCs captures more details and produces images closer to the originals.
-# This matches the variance curve, where most information is captured before it levels off.
+# With 2 PCs, the images are blurry. Around 15 PCs, the digits become clearly recognizable.
+# Using 40 PCs captures additional details and produces images closer to the originals.
+# This matches the variance curve because most of the important information is captured
+# before the curve begins to level off.
