@@ -133,9 +133,8 @@ print("Accuracy for KNN:", f"{accuracy_score(y_test, preds_unscaled):.4f}")
 # Q1
 values = [0.01, 1.0, 100]
 
-# Can't use "logistic regression" directly for multi-class classification, 
-# so I use "OneVsRestClassifier"to handle the multi-class case or there will be
-# an error at run-time.
+# OneVsRestClassifier wraps LogisticRegression to handle the multi-class Iris dataset.
+# Three separate models are trained using different C values.
 
 for c in values:
     log_reg = OneVsRestClassifier(
