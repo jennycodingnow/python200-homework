@@ -149,6 +149,9 @@ for c in values:
     coef_sum = np.abs(np.vstack([est.coef_ for est in log_reg.estimators_])).sum()
     print(f"C={c}: total coefficient magnitude = {coef_sum:.3f}")
 
+# As C increases, the total coefficient magnitude increases because weaker regularization
+# allows the model coefficients to grow larger. Smaller C values apply stronger regularization,
+# shrinking coefficients more aggressively.
 
 # --- PCA ---
 
