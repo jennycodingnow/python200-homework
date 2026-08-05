@@ -51,7 +51,7 @@ print("\n" + "="*50 + "\n")
 # --- Task 2: Bullet Point Rewriter ---  
 
 def rewrite_bullets(bullets: list[str]) -> list[dict]:
-    # Format the bullets into a delimited block
+
     bullet_text = "\n".join(f"- {b}" for b in bullets)
 
     prompt = f"""
@@ -69,15 +69,15 @@ def rewrite_bullets(bullets: list[str]) -> list[dict]:
     """
 
     messages = [{"role": "user", "content": prompt}]
-    # Your code here: call get_completion(), parse the JSON, and return the result
-
 
     response = get_completion(messages, temperature=0)
 
-    # Parse JSON safely
     try:
         clean_response = response.replace("```json", "").replace("```", "").strip()
         result = json.loads(clean_response)
+
+        print("\nRewritten Resume Bullets:\n")
+
         for item in result:
             print("Original:", item["original"])
             print("Improved:", item["improved"])
@@ -95,7 +95,11 @@ bullets = [
     "Made reports for the management team",
     "Worked with a team to finish the project on time"
 ]
-rewrite_bullets(bullets)
+result = rewrite_bullets(bullets)
+print("Task 2 Output:")
+print(result)
+
+
 print("\n" + "="*50 + "\n")
 
 # These bullets are weak because they are too generic, lack measurable details,
@@ -222,20 +226,57 @@ def run_chatbot():
                 if line:
                     raw_bullets.append(line)
 
-            rewrite_bullets(raw_bullets)
+            messages.append({
+                "role": "user",
+                "content": "Rewrite these resume bullet points:\n" + "\n".join(raw_bullets)
+            })
+
+            rewritten = rewrite_bullets(raw_bullets)
+
+            reply_parts = []
+
+            for item in rewritten:
+                reply_parts.append(
+                    f"Original: {item['original']}\nImproved: {item['improved']}"
+                )
+
+            assistant_reply = "\n\n".join(reply_parts)
+
+            messages.append({
+                "role": "assistant",
+                "content": assistant_reply
+            })
+
 
         elif "cover letter" in user_input.lower():
             job_title = input("Job Application Helper: What is the job title? ").strip()
             background = input("Job Application Helper: Briefly describe your background: ").strip()
+
+            messages.append({
+                "role": "user",
+                "content": (
+                    f"Generate a cover letter.\n"
+                    f"Job title: {job_title}\n"
+                    f"Background: {background}"
+                )
+            })
+
+
             cover_letter = generate_cover_letter(job_title, background)
             print("\nJob Application Helper: Here's a draft opening paragraph for your cover letter. Customize it to fit your needs:\n")
             print(cover_letter)
+
+            messages.append({
+                "role": "assistant",
+                "content": cover_letter
+            })
 
         else:
             messages.append({"role": "user", "content": user_input})
             response = get_completion(messages)
             print("Job Application Helper:", response)
             messages.append({"role": "assistant", "content": response})
+
 
 if __name__ == "__main__":
     run_chatbot()
@@ -255,6 +296,13 @@ resume styles or job advice that works well in one industry or country but may n
 If a job seeker submits the bot's output without reviewing it, the application may include incorrect or 
 exaggerated information. The bot could add skills, experience, or achievements that the person does not 
 actually have. It may also contain mistakes or sound too generic, which could hurt the person's chances of 
-getting hired. Reviewing and editing the output helps make sure it is accurate and personal.
+getting hired. The reviewing and editing of the output help make sure the content is accurate and personal.
+
+3)
+One guardrail I would add is a clear reminder for users to review and personalize 
+any AI-generated content before submitting it to employers. I would also include a 
+disclaimer that the assistant may make mistakes or generate suggestions that are not 
+appropriate for every industry or role. This helps encourage users to verify the content 
+and use their own judgment.
 
 """

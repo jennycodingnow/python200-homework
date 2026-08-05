@@ -306,16 +306,25 @@ print(response.choices[0].message.content)
 # with the instructions it should follow.
 
 # --- Local Models with Ollama ---  
+# Ollama Q1
 
 
-# OpenAI
-# The Responses API is the newer API style
-response = client.responses.create(
-    model="gpt-5",
-    input="Explain what a large language model is in two sentences."
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Explain what a large language model is in two sentences."}], 
+    temperature=0,
 )
 
-print(response.output_text)
+print(response.choices[0].message.content)
+
+
+"""
+Ollama output:
+A large language model is an AI model trained on vast amounts of text data, enabling it to understand and 
+generate human-like language. These models can perform tasks like translation, customer 
+service, and content generation, making them valuable tools across industries.
+
+"""
 
 """
 OpenAI output:
@@ -323,14 +332,6 @@ A large language model is a type of neural network trained on vast amounts of te
 (token) in a sequence, learning statistical patterns, structure, and knowledge embedded in language. 
 Using these learned representations, it can generate coherent text, answer questions, translate, summarize, 
 and perform other language-based tasks from input prompts.
-
-"""
-
-"""
-Ollama output:
-A large language model is an AI model trained on vast amounts of text data, enabling it to understand and 
-generate human-like language. These models can perform tasks like translation, customer 
-service, and content generation, making them valuable tools across industries.
 
 """
 
