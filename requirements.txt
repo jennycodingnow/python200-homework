@@ -104,6 +104,7 @@ pydantic-settings==2.14.2
 pydantic_core==2.46.4
 pydocket==0.23.0
 Pygments==2.20.0
+pymupdf==1.28.2
 pyparsing==3.3.2
 pypdf==6.15.0
 python-dateutil==2.9.0.post0
