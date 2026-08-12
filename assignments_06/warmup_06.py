@@ -27,9 +27,7 @@ else:
 # no need for a RAG system or fine-tuning.
 
 
-
 # Concepts Q2
-
 
 # A confidently wrong answer is more harmful than one that says "I am not sure" because the confidence level expressed in a 
 # confident response can make users more likely to trust and act on the information, even if it's incorrect. 
@@ -37,7 +35,6 @@ else:
 # confident hallucination caused harm is when users asked about certain edible wild mushrooms and the AI app
 # misidentified toxic wild mushrooms as safe to eat. This led to several cases of food poisoning, as people consumed the mushrooms thinking they were safe.
 # The more confident the tone of the response and details the content, the more likely users are to trust it.  
-
 
 
 # Concepts Q3
@@ -62,7 +59,7 @@ else:
 # 7. Inject retrieved chunks into the prompt - Add the retrieved information to the prompt sent to the LLM.
 # 8. Generate a response from the LLM - The LLM uses the prompt and retrieved context to answer the question.
 
-
+# --- Keyword RAG --- 
 
 def simple_keyword_retrieval(query, documents, verbose=True):
     """Keyword retrieval using token overlap scoring."""
@@ -105,7 +102,8 @@ def simple_keyword_retrieval(query, documents, verbose=True):
             print("\nNo overlapping keywords found.")
         return [("None found", "No relevant content.")]
 
-# # Keyword Q1
+#  Keyword Q1
+print(f"\nKeyword Q1:\n")
 
 query = "What are your hours on weekends?"
 
@@ -117,7 +115,8 @@ documents = {
 }
 
 print("\n--- Keyword Retrieval Keyword Q1---")
-simple_keyword_retrieval(query, documents, verbose=True)
+result = simple_keyword_retrieval(query, documents, verbose=True)
+print(f"\nBest match: {result[0][0]}")
 
 
 # Add a comment explaining which document was selected and why?
@@ -128,6 +127,7 @@ simple_keyword_retrieval(query, documents, verbose=True)
 
 
 # Keyword Q2
+print(f"\nKeyword Q2:\n")
 
 query = "Do you have anything without caffeine?"
 
@@ -135,20 +135,21 @@ print("\n--- Keyword Retrieval Keyword Q2 ---")
 simple_keyword_retrieval(query, documents, verbose=True)
 
 
-# No document was selected because there were no overlapping keywords between the query and any of the 
-# documents. The function returned "None found" as the best match.
+# No document was selected because there were no overlapping keywords between the query and any of 
+# the documents. The keyword retrieval function found 0 overlaps for every document and returned 
+# no matching document.
 
-# Keyword RAG did NOT get this right. The menu.txt document contains information about drinks, which is 
-# relevant to the question, but it does not use the exact keywords "caffeine" or "without." Because keyword 
-# retrieval depends on exact word overlap, it failed to recognize the semantic relationship.
+# Keyword RAG did NOT get this right. The question asks about drinks without caffeine, but none of 
+# the documents contained the exact query keywords, so keyword retrieval could not identify the relevant 
+# menu information.
 
-# Semantic RAG search would do better here because it would search for the meaning instead exactkeywords 
-# matching in the query and recognized that "without caffeine" relates to ingredient items, even if the 
-# exact keywords don't match. It will then retrieve documents that discuss ingredients, which could 
-# potentially include information about caffeine content.
+# Semantic RAG would likely do better because it searches based on meaning rather than requiring exact 
+# keyword overlap. It could recognize the semantic relationship between the question about caffeine-free 
+# drinks and information about drinks in menu.txt.
 
 
 # Keyword Q3
+print(f"\nKeyword Q3:\n")
 
 # I predict it will return "None found" because the query "How do I sign up for rewards?" does not 
 # share keywords with any of the documents.
@@ -198,6 +199,7 @@ simple_keyword_retrieval(query, documents, verbose=True)
 # --- LlamaIndex --- 
 
 # LlamaIndex Q1
+print(f"\nLlamaIndex Q1:\n")
 
 # Load documents directly from PDFs in the folder
 brightleaf_path = "../../python-200-v1/lessons/06_AI_augmentation/resources/brightleaf_pdfs"
@@ -219,8 +221,11 @@ for q in questions:
     print(f"\nQ: {q}")
     response = query_engine.query(q)
     print("A:", response)
-    
-    for node_with_score in response.source_nodes:
+
+    print("\nTop 3 source nodes:")
+    print("-" * 30)
+    top_3_nodes = response.source_nodes[:3]
+    for node_with_score in top_3_nodes:
         print(f"Node ID: {node_with_score.node.node_id}")
         print(f"Similarity Score: {node_with_score.score:.4f}")
         print(f"Text Snippet: {node_with_score.node.get_content()[:150]}...")
@@ -261,6 +266,7 @@ for q in questions:
 # --------------------------------------------------
 
 # LlamaIndex Q2
+print(f"\nLlamaIndex Q2:\n")
 
 k_list = [1, 5]
 
@@ -273,6 +279,7 @@ for k_ in k_list:
     print(f"Q: {question}")
     print(f"A: {response}")
 
+    print("-" * 30)
     for node_with_score in response.source_nodes:
         print(f"Node ID: {node_with_score.node.node_id}")
         print(f"Similarity Score: {node_with_score.score:.4f}")
@@ -293,6 +300,7 @@ for k_ in k_list:
 # --------------------------------------------------
 
 # LlamaIndex Q3
+print(f"\nLlamaIndex Q3:\n")
 
 k_ = 3
 query_engine = index.as_query_engine(similarity_top_k=k_)
@@ -302,7 +310,7 @@ response = query_engine.query(question)
 print(f"\n--- similarity_top_k={k_} ---")
 print(f"Q: {question}")
 print(f"A: {response}")
-
+print("-" * 30)
 
 for node_with_score in response.source_nodes:
     print(f"Node ID: {node_with_score.node.node_id}")
@@ -326,6 +334,7 @@ for node_with_score in response.source_nodes:
 # --------------------------------------------------
 
 # LlamaIndex Q4
+print(f"\nLlamaIndex Q4:\n")
 
 # Create Judge LLM
 llm = OpenAI(model="gpt-4o-mini", temperature=0.2)
@@ -338,6 +347,7 @@ relevancy_evaluator = RelevancyEvaluator(llm=llm)
 # Query 1: Question about information in the documents
 # --------------------------------------------------
 
+print(f"\nLlamaIndex Q4 Query 1:\n")
 # Get response to query
 q = "What employee benefits does BrightLeaf offer?"
 response = query_engine.query(q)
@@ -346,13 +356,16 @@ response = query_engine.query(q)
 faithfulness_result = faithfulness_evaluator.evaluate_response(query=q, response=response)
 relevancy_result = relevancy_evaluator.evaluate_response(query=q, response=response)
 
+print("-" * 30)
+print(f"Q: {q}")
+print("Response:", response)
 print("Faithfulness Evaluation: " + str(faithfulness_result.score))
 print("Relevancy Result: " + str(relevancy_result.score))
 
 # --------------------------------------------------
 # Query 2: Question about information not in the documents
 # --------------------------------------------------
-
+print(f"\nLlamaIndex Q4 Query 2:\n")
 q2 = "What store location do you have in Mars?"
 response2 = query_engine.query(q2)
 
@@ -360,6 +373,9 @@ faithfulness_result2 = faithfulness_evaluator.evaluate_response(query=q2, respon
 
 relevancy_result2 = relevancy_evaluator.evaluate_response(query=q2, response=response2)
 
+print("-" * 30)
+print(f"Q: {q2}")
+print("Response:", response2)
 print("Faithfulness Score (Query 2):", faithfulness_result2.score)
 print("Relevancy Score (Query 2):", relevancy_result2.score)
 
@@ -378,15 +394,15 @@ print("Relevancy Score (Query 2):", relevancy_result2.score)
 
 # Did the scores change between your two queries? If so, why do you think that happened?
 # Yes, the scores changed between the two queries. The first query about employee
-# benefits had high faithfulness and relevancy scores because the information
+# benefits had high faithfulness(1.0) and relevancy(1.0) scores because the information
 # was present in the documents, allowing the model to provide an accurate and
 # relevant response.
 
-# The second query about a store location on Mars received a lower relevancy
-# score because the BrightLeaf documents did not contain information about a
-# store location on Mars. Faithfulness remained high because the model avoided
-# making unsupported claims and stated that the information was not available
-# in the retrieved context.
+# For the second query about a store location on Mars, the model correctly stated that the provided
+# context contained no information about a BrightLeaf Solar store location in Mars. However, the faithfulness
+# evaluator gave the response a score of 0.0, while the relevancy score was 1.0. The results show that a
+# response can be relevant to the question while still receiving a low faithfulness score from the evaluator.
+# Therefore, the evaluator scores should be considered together with the actual response and the retrieved context.
 
 # What is the "LLM-as-a-judge" approach, and why is it used for RAG evaluation instead of a 
 # simple accuracy metric?
