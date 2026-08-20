@@ -795,10 +795,10 @@ print(result)
 # Q6
 # ------------------------------------------------
 
-# Add a comment that identifies what each role (system, user, assistant, tool) represents in the ReAct loop.
+# Q6: ReAct message roles
 # system: Instructions, rules, and context that define how the agent should behave.
 # user: The user's input, question, or task given to the agent.
-# assistant: The agent's messages, including its reasoning/action requests and responses.
+# assistant: The agent's messages, including reasoning/action requests and responses.
 # tool: Messages containing tool calls or the results returned by tools.
 
 print(json.dumps(messages, indent=2, default=str))
@@ -982,22 +982,27 @@ print("\nCode Agent Response:\n", response_code)
 
 # Add a comment block answering:
 # What did each agent actually produce? Did the ToolCallingAgent change the dot color? Did the CodeAgent?
-# The ToolCallingAgent produced a plot that did not change the dot color; it used the default settings of the plot_data tool. 
-# The CodeAgent, on the other hand, produced a plot with green dots as requested, because it allowed for custom matplotlib code
-# to be executed.
+#
+# The ToolCallingAgent uses the predefined behavior of the available tools,
+# so it can only make changes that those tools support. A CodeAgent can
+# generate and execute custom Python code, so it can make additional changes
+# such as customizing the color of the dots.
 
 # What does this reveal about when each type of agent is more useful?
-# This reveals that the ToolCallingAgent is more useful for standard tasks that can be accomplished 
-# with predefined tools, while the CodeAgent is more useful for tasks that require customization 
-# or specific styling that the tools cannot provide. The CodeAgent allows for greater flexibility 
-# and control over the output, making it suitable for more complex or specific requests.
+#
+# This shows that a ToolCallingAgent is useful for well-defined tasks that
+# can be completed using existing tools. A CodeAgent is more useful when a
+# task requires customization, data manipulation, or functionality that is
+# not directly available through the predefined tools.
 
 # ------------------------------------------------
 # Q9
 # ------------------------------------------------
 
 # Add a comment block at the bottom of your warmup file answering both questions:
+#
 # 1.Describe a task where a ToolCallingAgent would be a better choice than a CodeAgent. 
+#
 # ToolCallingAgent would be a better choice for tasks that are well-defined and can be accomplished using 
 # existing tools without the need for customization. For example, if the task is to load a CSV file and 
 # compute basic summary statistics (like mean, median, and standard deviation) for specific columns, 
@@ -1005,15 +1010,18 @@ print("\nCode Agent Response:\n", response_code)
 
 
 # What property of the task makes it a good fit for a tool-based approach?
-# The property of the task that makes it a good fit for a tool-based approach is that it can be completed 
-# using predefined functions with clear inputs and outputs, minimizing the risk of errors and ensuring consistency.
+#
+# The task has clear inputs and outputs and can be completed using
+# predefined functions. It does not require the agent to create custom
+# Python code or customize the procedure.
 
 
 # 2.What is one meaningful risk of using a CodeAgent that does not apply to a ToolCallingAgent? 
-# (Think about what's actually happening when the agent generates and runs code.)
-# One meaningful risk of using a CodeAgent is the potential for code injection or execution of malicious code when it
-# custom generated codes are executed. It writes it own code, which could be exploited by attackers.This could lead to 
-# security vulnerabilities or data breaches. This risk is not present in a ToolCallingAgent, as it only calls existing 
-# tools with predefined parameters. It also has the power to save files, modify the environment, or access sensitive data, 
-# which could lead to unintended consequences if not properly controlled. For example in this case,it saved a plot graph file in 
-# a random location unlike ToolCallingAgent which would have saved it in a specified location. 
+#
+# A meaningful additional risk of a CodeAgent is that it can generate and
+# execute code dynamically. If the generated code is incorrect or unsafe,
+# it could perform unintended actions, such as modifying files or accessing
+# resources that the agent should not use. A ToolCallingAgent is more
+# constrained because it can only perform the actions exposed through its
+# predefined tools. This makes the CodeAgent more flexible, but also means
+# that its code execution capabilities need stronger controls.

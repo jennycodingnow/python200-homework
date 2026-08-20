@@ -18,6 +18,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 df = None
 DATA_PATH = Path("resources/merged_happiness.csv")
+FALLBACK_DATA_DIR = Path("resources/happiness_project/")
 
 os.makedirs("outputs/", exist_ok=True)
 
@@ -56,7 +57,7 @@ def load_happiness_data() -> dict:
         df = yearly_df
 
     else: 
-        data_dir = Path("resources/happiness_project/")
+        data_dir = Path(FALLBACK_DATA_DIR)
         all_files = list(data_dir.glob("world_happiness_*.csv"))
 
         if not all_files:
@@ -78,12 +79,11 @@ def load_happiness_data() -> dict:
                 yearly_df.columns
                 .str.strip()
                 .str.lower()
-                .str.replace(" ", "_")
+                .str.replace(" ", "_", regex=False)
             )
             
             year = file.split("_")[-1].replace(".csv", "")
             yearly_df["year"] = int(year)
-
 
             dataframes.append(yearly_df)
 
