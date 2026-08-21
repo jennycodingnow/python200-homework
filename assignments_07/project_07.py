@@ -17,15 +17,15 @@ else:
 api_key = os.getenv("OPENAI_API_KEY")
 
 df = None
-DATA_PATH = Path("resources/merged_happiness.csv")
-FALLBACK_DATA_DIR = Path("resources/happiness_project/")
+DATA_PATH = Path("../assignments_01/outputs/merged_happiness.csv")
+FALLBACK_DATA_DIR = Path("../assignments/resources/happiness_project/")
 
 os.makedirs("outputs/", exist_ok=True)
 
 
-# ------------------------------------------------
+# ================================================================
 # Task 1: Define Your Tools
-# ------------------------------------------------
+# ================================================================
 
 #Tool 1: load_happiness_data
 
@@ -34,46 +34,70 @@ def load_happiness_data() -> dict:
     """Load the World Happiness dataset into global dataframe.
     
     Returns:
-        A dictionary containing the shape of the loaded data and a list
-        of the column names.
+        A dictionary containing the shape and column names of the
+        loaded dataframe, or an error dictionary if loading fails
     """
     global df
     if DATA_PATH.exists():
-        yearly_df = pd.read_csv(DATA_PATH)
-        yearly_df = yearly_df.rename(columns={ 
-            "Ladder score": "happiness_score",
-            "Happiness score": "happiness_score",
-            "Country": "country",
-            "Regional indicator": "region",
-            "GDP per capita": "gdp_per_capita"
-        })
+        try:
+            df = pd.read_csv(DATA_PATH)
 
-        yearly_df.columns = (
-            yearly_df.columns
-            .str.strip()
-            .str.lower()
-            .str.replace(" ", "_", regex=False)
-        )
-        df = yearly_df
+            # Standardize column names
+            df.columns = (
+                df.columns
+                .str.strip()
+                .str.lower()
+                .str.replace(" ", "_", regex=False)
+            )
 
-    else: 
-        data_dir = Path(FALLBACK_DATA_DIR)
-        all_files = list(data_dir.glob("world_happiness_*.csv"))
-
-        if not all_files:
-            return {"error": "No World Happiness CSV were found."}
-
-        dataframes = []
-
-        for file in all_files:
-            yearly_df = pd.read_csv(file, sep=";", decimal=",")
-            yearly_df = yearly_df.rename(columns={
-                "Ladder score": "happiness_score",
-                "Happiness score": "happiness_score",
-                "Country": "country",
-                "Regional indicator": "region",
-                "GDP per capita": "gdp_per_capita"
+            df = df.rename(columns={
+                "ladder_score": "happiness_score",
+                "happiness_score": "happiness_score",
+                "country": "country",
+                "regional_indicator": "region",
+                "gdp_per_capita": "gdp_per_capita"
             })
+
+            return {
+                "shape": df.shape,
+                "columns": list(df.columns)
+            }
+
+        except Exception as e:
+            return {
+                "error": f"Could not load merged dataset: {str(e)}"
+            }
+
+    # ------------------------------------------------
+    # Option 2: Load and merge yearly datasets
+    # ------------------------------------------------
+    if not FALLBACK_DATA_DIR.exists():
+        return {
+            "error": f"Fallback directory not found: {FALLBACK_DATA_DIR}"
+        }
+
+    # Find all yearly World Happiness CSV files
+    all_files = sorted(
+        FALLBACK_DATA_DIR.glob("world_happiness_*.csv")
+    )
+
+    if not all_files:
+        return {
+            "error": (
+                f"No yearly World Happiness CSV files found in "
+                f"{FALLBACK_DATA_DIR}"
+            )
+        }
+
+    dataframes = []
+
+    for file in all_files:
+        try:
+            yearly_df = pd.read_csv(
+                file,
+                sep=";",
+                decimal=","
+            )
 
             yearly_df.columns = (
                 yearly_df.columns
@@ -81,20 +105,33 @@ def load_happiness_data() -> dict:
                 .str.lower()
                 .str.replace(" ", "_", regex=False)
             )
-            
-            year = file.split("_")[-1].replace(".csv", "")
-            yearly_df["year"] = int(year)
+
+            yearly_df = yearly_df.rename(columns={
+                "ladder_score": "happiness_score",
+                "happiness_score": "happiness_score",
+                "country": "country",
+                "regional_indicator": "region",
+                "gdp_per_capita": "gdp_per_capita"
+            })
+
+            year_text = file.stem.split("_")[-1]
+            year = int(year_text)
+
+            yearly_df["year"] = year
 
             dataframes.append(yearly_df)
 
-        df = pd.concat(dataframes, ignore_index=True)
+        except Exception as e:
+            return {
+                "error": f"Could not load {file.name}: {str(e)}"
+            }
 
+    df = pd.concat(dataframes, ignore_index=True)
 
     return {
         "shape": df.shape,
         "columns": list(df.columns)
     }
-
 
 #Tool 2: summarize_column
 @tool
@@ -144,7 +181,28 @@ def compute_correlation(col1: str, col2: str) -> dict:
     if col2 not in df.columns:
         return {"error": f"Column '{col2}' is not in the data."}
 
-    r, p = pearsonr(df[col1], df[col2])
+    correlation_data = df[[col1, col2]].copy()
+
+    correlation_data[col1] = pd.to_numeric(
+        correlation_data[col1],
+        errors="coerce"
+    )
+    correlation_data[col2] = pd.to_numeric(
+        correlation_data[col2],
+        errors="coerce"
+    )
+
+    correlation_data = correlation_data.dropna()
+
+    if len(correlation_data) < 2:
+        return {
+            "error": "Not enough valid numeric data to calculate correlation."
+        }
+
+    r, p = pearsonr(
+        correlation_data[col1],
+        correlation_data[col2]
+    )
 
     return {
         "col1": col1,
@@ -180,9 +238,9 @@ def get_top_n_countries(column: str, year: int, n: int = 5) -> dict:
     top_happiness = df[df["year"] == year].sort_values(by=column, ascending=False).head(n)
     return top_happiness[["country", column]].to_dict("records")
 
-# ------------------------------------------------
+# ================================================================
 # Task 2: Build the Agent
-# ------------------------------------------------
+# ================================================================
 
 model = OpenAIServerModel(api_key=api_key, model_id="gpt-4o-mini")
 
@@ -193,7 +251,7 @@ and ranking countries. Write Python code directly only when the tools are not su
 (for example, when creating custom plots or computing something the tools don't cover).
 
 For plots, use matplotlib.pyplot with a non-interactive backend and save the figure
-directly to the assignments_07/outputs/. 
+to the outputs/happiness_by_region.png when requested.
 
 Be concise and student-friendly in your responses.
 """
@@ -206,16 +264,15 @@ agent = CodeAgent(
     max_steps=8,
 )
 
-# ------------------------------------------------
+# ================================================================
 # Running the Project
-# ------------------------------------------------
+# ================================================================
 
 if __name__ == "__main__":
 
-    # ------------------------------------------------
+    # ================================================================
     # Task 3: Run Guided Queries
-    # ------------------------------------------------
-
+    # ================================================================
     queries = [
         "Load the happiness data and tell me its shape and column names.",
         "Summarize the happiness_score column.",
@@ -230,9 +287,10 @@ if __name__ == "__main__":
         print(f"Response: {response}")
 
 
-    # ------------------------------------------------
+
+    # ================================================================
     # Task 4: Your Own Questions
-    # ------------------------------------------------
+    # ================================================================
 
 
     # My query 1
@@ -253,30 +311,41 @@ if __name__ == "__main__":
     # change in regional averages between two years.
 
 
-# ------------------------------------------------
+# ================================================================
 # Task 5: Reflection
-# ------------------------------------------------
+# ================================================================
 
-# --- Reflection ---
+
+# ------------------------------------------------
+# Question 1
+# ------------------------------------------------
+# In Query 3, how did the agent communicate whether the correlation was statistically
+# significant? Did it use the p-value correctly? What threshold did it apply?
 #
-# 1. In Query 3, how did the agent communicate whether the correlation was statistically
-#    significant? Did it use the p-value correctly? What threshold did it apply?
-#
+# Answer:
 # The agent reported a Pearson correlation of 0.6313 and a p-value of 0.0.
 # It correctly identified the correlation as statistically significant because
 # the p-value was below the conventional 0.05 significance threshold.
 #
-# 2. Did any of the agent's responses surprise you — either by being more capable than
-#    you expected, or less? Describe one specific example.
+# ------------------------------------------------
+# Question 2
+# ------------------------------------------------
+# Did any of the agent's responses surprise you — either by being more capable than
+# you expected, or less? Describe one specific example.
 #
+# Answer:
 # Yes, I was surprised me that the agent was capable to recognize that it needed custom code, 
 # but it also demonstrated a limitation: after failing to access the real data, it generated 
 # mock data and produced an answer from that mock data.
 #
-# 3. What one additional tool would make this agent meaningfully more useful?
-#    Describe what it would do and what kind of question it would help the agent answer.
-#    (You do not need to implement it.)
+# ------------------------------------------------
+# Question 3
+# ------------------------------------------------
+# What one additional tool would make this agent meaningfully more useful?
+# Describe what it would do and what kind of question it would help the agent answer.
+# (You do not need to implement it.)
 #
+# Answer:
 # An additional tool that would make the agent more useful would be a
 # regional statistics tool. It could calculate statistics such as the average
 # happiness score for each region for a selected year or compare regional

@@ -177,19 +177,23 @@ def run_agent_q2(user_prompt: str) -> str:
     return first_message.content or ""
 
 
-# --------------------------------------------------
+# ================================================================
 # Q2 Reflection:
+# ================================================================
 #
 # Add a comment block that predicts:
 # 1) Will calling run_agent("Convert 100 degrees Celsius to Fahrenheit") trigger a tool call? Why or why not?
 #
+# Answer: 
 # No. The only available tool in Q2 is get_current_time.
 # That tool can't be used for converting Celsius to Fahrenheit.
 # Therefore, the model should answer the question directly without
 # calling a tool.
 #
+#
 # 2) How many API calls will be made to answer this query?
 #
+# Answer:
 # One API call. Since no tool is needed, the first model response
 # should already be the final answer. A second API call is only
 # needed when the model requests a tool and the tool result must
@@ -203,7 +207,9 @@ answer_q2 = run_agent_q2(
 
 print("Q2 Answer:", answer_q2)
 
-# Prediction check:
+
+# Q2-Prediction check:
+#
 # My prediction was correct. The agent did not call get_current_time
 # because it was not relevant to the Celsius-to-Fahrenheit question.
 # Therefore, only one API call was needed.
@@ -322,7 +328,7 @@ def run_agent_q3(user_prompt: str) -> str:
 
 
 # ------------------------------------------------
-# Q3 Tests
+# Q3-Tests
 # ------------------------------------------------
 
 print("\nQ3: Testing the extended agent\n")
@@ -1003,6 +1009,7 @@ print("\nCode Agent Response:\n", response_code)
 #
 # 1.Describe a task where a ToolCallingAgent would be a better choice than a CodeAgent. 
 #
+# Answer: 
 # ToolCallingAgent would be a better choice for tasks that are well-defined and can be accomplished using 
 # existing tools without the need for customization. For example, if the task is to load a CSV file and 
 # compute basic summary statistics (like mean, median, and standard deviation) for specific columns, 
@@ -1011,6 +1018,7 @@ print("\nCode Agent Response:\n", response_code)
 
 # What property of the task makes it a good fit for a tool-based approach?
 #
+# Answer: 
 # The task has clear inputs and outputs and can be completed using
 # predefined functions. It does not require the agent to create custom
 # Python code or customize the procedure.
@@ -1018,6 +1026,7 @@ print("\nCode Agent Response:\n", response_code)
 
 # 2.What is one meaningful risk of using a CodeAgent that does not apply to a ToolCallingAgent? 
 #
+# Answer: 
 # A meaningful additional risk of a CodeAgent is that it can generate and
 # execute code dynamically. If the generated code is incorrect or unsafe,
 # it could perform unintended actions, such as modifying files or accessing
