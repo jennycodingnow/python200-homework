@@ -17,8 +17,8 @@ else:
 api_key = os.getenv("OPENAI_API_KEY")
 
 df = None
-DATA_PATH = Path("../assignments_01/outputs/merged_happiness.csv")
-FALLBACK_DATA_DIR = Path("../assignments/resources/happiness_project/")
+DATA_PATH = Path("assignments_01/outputs/merged_happiness.csv")
+FALLBACK_DATA_DIR = Path("assignments/resources/happiness_project/")
 
 os.makedirs("outputs/", exist_ok=True)
 
@@ -42,7 +42,6 @@ def load_happiness_data() -> dict:
         try:
             df = pd.read_csv(DATA_PATH)
 
-            # Standardize column names
             df.columns = (
                 df.columns
                 .str.strip()
@@ -58,6 +57,11 @@ def load_happiness_data() -> dict:
                 "gdp_per_capita": "gdp_per_capita"
             })
 
+            if "year" not in df.columns:
+                return {
+                    "error": "Merged dataset does not contain a 'year' column."
+                }
+            
             return {
                 "shape": df.shape,
                 "columns": list(df.columns)
@@ -68,9 +72,6 @@ def load_happiness_data() -> dict:
                 "error": f"Could not load merged dataset: {str(e)}"
             }
 
-    # ------------------------------------------------
-    # Option 2: Load and merge yearly datasets
-    # ------------------------------------------------
     if not FALLBACK_DATA_DIR.exists():
         return {
             "error": f"Fallback directory not found: {FALLBACK_DATA_DIR}"
