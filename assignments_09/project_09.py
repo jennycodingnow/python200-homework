@@ -2,10 +2,10 @@
 # ================================================
 # Part 2: Project — Extract + Load Pipeline
 # ================================================
+# https://youtu.be/-QtR8ufFUGk
 
 
 import requests
-import pandas as pd
 import os
 from dotenv import load_dotenv
 from datetime import date
