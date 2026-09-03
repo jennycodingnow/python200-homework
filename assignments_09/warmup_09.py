@@ -40,11 +40,8 @@ def get_client():
     supabase_url = os.getenv("SUPABASE_URL")
     supabase_key = os.getenv("SUPABASE_KEY")
 
-    if not supabase_url:
-        raise ValueError("Supabase URL is missing.")
-
-    if not supabase_key:
-        raise ValueError("Supabase API key is missing.")
+    if not supabase_url or not supabase_key :
+        raise ValueError("Supabase URL or Supabase API key is missing.")
 
     supabase = create_client(supabase_url, supabase_key)
 
@@ -82,7 +79,7 @@ def insert_test_record(supabase):
         "precipitation_sum":  3.5,
         "wind_speed_10m_max": 18.7,
     }
-    response = supabase.table("weather_raw").upsert(data).execute()
+    response = supabase.table("weather_raw").insert(data).execute()
     return response
 
 supabase = get_client()
@@ -111,7 +108,8 @@ def get_records_by_date_range(supabase, start, end):
     response = supabase.table("weather_raw").select("*").gte("date", start).lte("date", end).execute()
     return response.data
 
-result = get_records_by_date_range(supabase, "2026-08-26", "2026-08-26")
+result = get_records_by_date_range(supabase, "2026-09-01", "2026-09-03")
+print(f"Results for Crud Q2: {result}")
 
 # Q3
 
@@ -119,30 +117,29 @@ result = get_records_by_date_range(supabase, "2026-08-26", "2026-08-26")
 # Give a concrete example of when you would choose each.
 #
 # Answer:
-# Insert is used to insert new records into a table. If a record with the same primary key 
-# already exists, it will raise an error if you set a unique constraint on the primary key. 
-# If you didn't set a unique constraint, it would simply insert a duplicate new record.
-# Upsert is used to insert a new record or update an existing record if it already exists instead of 
-# duplicating it. You would choose insert when you are certain that the record you are adding is new and does not already 
-# exist in the table. And you would choose upsert when you want to ensure that the record is added if 
-# it doesn't exist or updated if it does exist, which is useful for scenarios where you want to avoid 
-# duplicates and maintain data integrity. Example of insert: When setup a new project with new tables 
-# and data, you would use insert to add the initial records.  Example of upsert: When you are receiving 
-# a customer's update to their profile information, you would use upsert to ensure that the existing record 
-# is updated with the new information instead of creating a duplicate record.
+# INSERT adds a new record to a table. If a record with the same primary key
+# already exists, the insert will fail because primary keys must be unique.
+#
+# Example of INSERT: I would use INSERT when adding a new weather record for
+# a date that I know does not already exist in the weather_raw table.
+#
+# UPSERT means "update or insert." It adds a new record if one does not already
+# exist, or updates the existing record if a matching record is found based on
+# the conflict key. This is useful when you want to avoid duplicate records
+# while keeping existing data up to date.
+#
+# Example of UPSERT: When receiving an updated weather record for a date that
+# may already exist in weather_raw, I would use UPSERT so that the existing
+# record is updated instead of creating a duplicate. In this task, the "date"
+# column is used as the conflict key.
+
 
 def safe_upsert(supabase, records):
     """
     Safely upserts a list of records into weather_raw.
     """
-    total_rows = 0
-
-    for record in records:
-        response = (supabase.table("weather_raw").upsert(record, on_conflict="date").execute())
-
-        total_rows += len(response.data)
-    print(f"Upserted {total_rows} records into weather_raw.")
-
+    response = supabase.table("weather_raw").upsert(records, on_conflict="date").execute()
+    print(f"Upserted {len(response.data)} records into weather_raw.")
 
 records = [
     {
@@ -173,8 +170,15 @@ safe_upsert(supabase, records)
 # crashes halfway through and is restarted.
 #
 # Answer:
-# Idempotency matters for a data pipeline because it ensures that the same operation 
-# can be performed multiple times produces the same result as running it once. 
-# This is important in data pipelines because failures can occur, and if a 
-# pipeline is not idempotent, re-running it after a failure could lead to 
-# duplicate records, inconsistent data, or other consequences.
+# Idempotency matters for a data pipeline because running the same operation
+# multiple times should produce the same result as running it once. This is
+# important because data pipelines can fail or crash and may need to be
+# restarted. If a pipeline is not idempotent, restarting it can create
+# duplicate records, inconsistent data, or other problems.
+#
+# For example, suppose a pipeline is inserting daily weather records for
+# August 25 through August 30. If the script successfully inserts the
+# records for August 25, 26, and 27, but then crashes before finishing,
+# restarting the script from the beginning could insert August 25, 26, and
+# 27 again. This would create duplicate weather records for those dates
+# instead of producing the same final result as running the pipeline once. 
