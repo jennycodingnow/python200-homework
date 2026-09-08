@@ -17,7 +17,7 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 # ------------------------------------------------
 
 # ML/LLM Q1
-
+# Questions:
 # Explain the difference between what the ML classifier produces and what 
 # the LLM produces in this week's pipeline. Why does each tool do what it does? 
 # What would go wrong if you tried to swap them — using the LLM to make the 
