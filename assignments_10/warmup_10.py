@@ -3,11 +3,11 @@
 # ================================================
 
 import os
-from time import time
+import time
 import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
-from supabase import create_client
+
 
 load_dotenv()
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
@@ -108,25 +108,14 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 def call_with_retry(client, messages, max_retries=3):
-
-    SYSTEM_PROMPT = (
-    "You are writing a two-sentence running recommendation for a daily weather summary app. "
-    "The first sentence must state the prediction, and the second sentence must explain the reasoning. "
-    "You will receive weather conditions for a single day and a machine learning prediction "
-    "about whether the day is good for running. "
-    "Write exactly two sentences—direct, practical, and specific to the conditions and reasoning. "
-    "Do not use bullet points, headers, or phrases like 'Based on the data'."
-    )
-
     for i in range(max_retries):
         try:
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                system=SYSTEM_PROMPT,
             )
             return response.choices[0].message.content.strip()
-        except Exception as e:
+        except Exception:
             if i < max_retries - 1:
                 time.sleep(2)
     return None
