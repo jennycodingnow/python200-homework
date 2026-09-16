@@ -33,19 +33,8 @@ from prefect.logging import get_run_logger
 # Write just the decorator line for a task named call_api that retries up to 3 times with a 30-second 
 # delay between attempts.
 
-@task
-def call_api(client, messages, max_retries=3):
-    for i in range(max_retries):
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-            )
-            return response.choices[0].message.content.strip()
-        except Exception:
-            if i < max_retries - 1:
-                time.sleep(30)
-    return None
+@task (name="call_api", retries=3, retry_delay_seconds=30)
+
 
 #------Prefect Q3------
 
@@ -109,7 +98,7 @@ def call_api(client, messages, max_retries=3):
 @task
 def load_enriched(enrichment_records: list)-> None:
     logger = get_run_logger()
-    logger.info(f"Upserting {len(enrichment_records)} enrichment records")
+    logger.info(f"Upserted {len(enrichment_records)} enrichment records")
 
 
 #------Production Q4------
